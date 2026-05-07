@@ -1,0 +1,42 @@
+# frozen_string_literal: true
+
+# <%= class_name %> Routing Robot
+#
+# <%= robot_description %>
+#
+class <%= class_name %>Robot < RobotLab::Robot
+  SYSTEM_PROMPT = <<~PROMPT
+    You are a routing robot that classifies user requests.
+
+    Analyze the user's request and respond with ONLY the category name.
+    Valid categories: billing, technical, general
+  PROMPT
+
+  def self.build(**options)
+    new(
+      name: "<%= file_name %>",
+      description: "<%= robot_description %>",
+      system_prompt: SYSTEM_PROMPT,
+      **options
+    )
+  end
+
+  def call(result)
+    context = extract_run_context(result)
+    message = context.delete(:message)
+
+    robot_result = run(message, **context)
+
+    new_result = result
+      .with_context(@name.to_sym, robot_result)
+      .continue(robot_result)
+
+    category = robot_result.last_text_content.to_s.strip.downcase
+
+    case category
+    when /billing/   then new_result.activate(:billing)
+    when /technical/ then new_result.activate(:technical)
+    else new_result.activate(:general)
+    end
+  end
+end
