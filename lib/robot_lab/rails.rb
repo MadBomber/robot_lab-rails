@@ -8,3 +8,7 @@ if defined?(::Rails)
   require_relative "rails_integration/railtie"
   require_relative "rails_integration/job"
 end
+
+if defined?(RobotLab) && RobotLab.respond_to?(:register_extension)
+  RobotLab.register_extension(:rails, RobotLab::Rails)
+end
