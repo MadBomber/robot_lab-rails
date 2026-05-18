@@ -21,7 +21,7 @@ Style/FrozenStringLiteralComment:
 
 # Development dependencies belong in the Gemfile, not the gemspec
 Gemspec/DevelopmentDependencies:
-  EnforcedStyle: gemfile
+  EnforcedStyle: Gemfile
 
 # 120 chars fits modern screens without sacrificing readability
 Layout/LineLength:
