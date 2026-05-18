@@ -2,11 +2,16 @@
 
 source "https://rubygems.org"
 
-# Specify your gem's dependencies in robot_lab-rails.gemspec
 gemspec
 
-gem "rake", "~> 13.0"
+group :development, :test do
+  gem "debug_me"
+  gem "flog"
+  gem "minitest", "~> 5.16"
+  gem "rake",     "~> 13.0"
+  gem "rubocop"
+end
 
-gem "minitest", "~> 5.16"
-
-gem "debug_me"
+group :test do
+  gem "simplecov", require: false
+end

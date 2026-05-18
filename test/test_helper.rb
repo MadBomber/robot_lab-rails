@@ -8,6 +8,7 @@ module RobotLab
   Error = StandardError unless defined?(Error)
 end
 
+require "active_support/isolated_execution_state"
 require "active_support/core_ext/numeric/time"
 require "active_support/core_ext/string/inflections"
 
