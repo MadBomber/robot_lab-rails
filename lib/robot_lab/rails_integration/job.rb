@@ -39,9 +39,10 @@ module RobotLab
 
       def resolve_robot_class(runtime_class)
         klass = runtime_class || self.class.robot_class
-        raise ArgumentError,
-              "No robot class specified. Pass robot_class: to perform or set robot_class on the job class." \
-          unless klass
+        unless klass
+          raise ArgumentError,
+                "No robot class specified. Pass robot_class: to perform or set robot_class on the job class."
+        end
 
         return klass if klass.is_a?(Class)
 

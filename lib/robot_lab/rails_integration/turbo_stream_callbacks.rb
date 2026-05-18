@@ -13,7 +13,7 @@ module RobotLab
       end
 
       def self.build_content_callback(stream_name:, target: "robot_response")
-        ->(chunk) {
+        lambda { |chunk|
           content = chunk.respond_to?(:content) ? chunk.content : chunk.to_s
           return unless content && TurboStreamCallbacks.available?
 
@@ -26,7 +26,7 @@ module RobotLab
       end
 
       def self.build_tool_call_callback(stream_name:, target: "robot_tools")
-        ->(tool_call) {
+        lambda { |tool_call|
           return unless TurboStreamCallbacks.available?
 
           name = tool_call.respond_to?(:name) ? tool_call.name : tool_call.to_s

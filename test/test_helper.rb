@@ -15,6 +15,7 @@ require "active_support/core_ext/string/inflections"
 unless defined?(ActiveJob::Base)
   module ActiveJob
     class DeserializationError < StandardError; end
+
     class Base
       def self.retry_on(*) = nil
       def self.discard_on(*) = nil

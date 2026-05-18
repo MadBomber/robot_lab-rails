@@ -9,7 +9,7 @@ class RobotLab::RailsIntegration::JobTest < Minitest::Test
   end
 
   FakeRobot = Struct.new(:result) do
-    def run(message, **) = result
+    def run(_message, **) = result
   end
 
   class SpyRobotClass
@@ -211,9 +211,11 @@ class RobotLab::RailsIntegration::JobTest < Minitest::Test
     Object.const_set(:Turbo, turbo_mod)
     channel = Class.new do
       def self.broadcasts    = @broadcasts ||= []
+
       def self.broadcast_append_to(stream_name, target:, html:)
         broadcasts << { stream_name:, target:, html: }
       end
+
       def self.broadcast_replace_to(stream_name, target:, html:)
         broadcasts << { stream_name:, target:, html:, action: :replace }
       end
