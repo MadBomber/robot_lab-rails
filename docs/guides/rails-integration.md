@@ -35,7 +35,7 @@ rails db:migrate
 
 ## Configuration
 
-RobotLab uses [MywayConfig](https://github.com/madbomber/myway_config) for configuration. There is no `RobotLab.configure` block. Instead, settings are loaded from YAML files and environment variables in the following priority order:
+RobotLab uses [MywayConfig](https://github.com/madbomber/myway_config) for static configuration. Settings are loaded from YAML files and environment variables in the following priority order:
 
 1. **Bundled defaults** (`lib/robot_lab/config/defaults.yml`)
 2. **Environment-specific overrides** (development, test, production sections)
@@ -85,14 +85,21 @@ ROBOT_LAB_RUBY_LLM__REQUEST_TIMEOUT=180
 
 RobotLab also falls back to standard provider environment variables (e.g. `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`) when the prefixed versions are not set.
 
-### Initializer (Logger Only)
+### Initializer
 
-The only runtime-writable config attribute is the logger. The generated initializer sets it to the Rails logger:
+Use `RobotLab.configure` to set runtime attributes. The generated initializer wires the logger to `Rails.logger`:
 
 ```ruby title="config/initializers/robot_lab.rb"
 # frozen_string_literal: true
 
-# Set the RobotLab logger to use Rails.logger
+RobotLab.configure do |c|
+  c.logger = Rails.logger
+end
+```
+
+You can also assign it directly if you prefer a one-liner:
+
+```ruby
 RobotLab.config.logger = Rails.logger
 ```
 

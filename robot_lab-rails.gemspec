@@ -32,7 +32,7 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "robot_lab"
+  spec.add_dependency "robot_lab", "~> 0.2.0"
   spec.add_dependency "railties",      ">= 7.0"
   spec.add_dependency "activejob",     ">= 7.0"
   spec.add_dependency "activesupport", ">= 7.0"
