@@ -1,0 +1,15 @@
+# frozen_string_literal: true
+# robot_lab-rails — ActiveJob, generators, Turbo broadcasts for Rails apps.
+
+import_up "repo_dev.loki"
+
+class Tasks
+  @@gem_name ||= "robot_lab-rails".freeze
+
+  header "robot_lab-rails v#{gem_version} — Rails integration for RobotLab"
+
+  desc "Run Rails-specific integration tests"
+  def integration
+    sh "bundle exec rake test"
+  end
+end
