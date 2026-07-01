@@ -78,6 +78,31 @@ SupportJob.perform_later(message: params[:message], thread_id: session_id)
 
 Omitting `thread_id` runs the robot in fire-and-forget mode — no persistence, no broadcasting.
 
+## Recurring Tasks (Solid Queue)
+
+When using [Solid Queue](https://github.com/rails/solid_queue), skip the wrapper job and call a class method directly via the `command:` key in `config/recurring.yml`:
+
+```ruby
+# app/services/daily_digest.rb
+class DailyDigest
+  def self.run
+    User.digest_subscribers.find_each do |user|
+      DailyDigestJob.perform_later(user_id: user.id)
+    end
+  end
+end
+```
+
+```yaml
+# config/recurring.yml
+daily_digest:
+  command: "DailyDigest.run"
+  schedule: "every day at 06:00"
+  queue: ai   # optional; defaults to solid_queue_recurring
+```
+
+The orchestrator class is independently testable. For overnight autonomous runs, `RobotLab::To.run` works as a recurring command directly. See the [Rails Integration Guide](https://madbomber.github.io/robot_lab-rails/guides/rails-integration#recurring-tasks-solid-queue) for queue configuration details and the `robot_lab-to` pattern.
+
 ## Turbo Stream Streaming
 
 When `thread_id` is provided and [turbo-rails](https://github.com/hotwired/turbo-rails) is installed, `RobotLab::Job` automatically:

@@ -503,6 +503,83 @@ class ProcessMessageJob < ApplicationJob
 end
 ```
 
+## Recurring Tasks (Solid Queue)
+
+When using [Solid Queue](https://github.com/rails/solid_queue), you can schedule robot runs without writing a thin wrapper job. Solid Queue's `command:` key in `config/recurring.yml` calls a class method directly, eliminating unnecessary glue code.
+
+### Orchestrator class
+
+Keep the scheduling logic in a plain Ruby class. The class method fans out per-item jobs — or runs a robot directly:
+
+```ruby title="app/services/daily_digest.rb"
+class DailyDigest
+  def self.run
+    User.digest_subscribers.find_each do |user|
+      DailyDigestJob.perform_later(user_id: user.id)
+    end
+  end
+end
+```
+
+### Wiring in recurring.yml
+
+Reference the method directly in `config/recurring.yml`:
+
+```yaml title="config/recurring.yml"
+daily_digest:
+  command: "DailyDigest.run"
+  schedule: "every day at 06:00"
+```
+
+No wrapper job needed. `DailyDigest.run` is a plain class method — independently testable without enqueuing anything.
+
+### Queue configuration
+
+Solid Queue sends recurring commands to the `solid_queue_recurring` queue by default. Add a dedicated worker in `config/queue.yml` so recurring runs don't compete with your main job queues:
+
+```yaml title="config/queue.yml"
+production:
+  workers:
+    - queues: [solid_queue_recurring]
+      threads: 1
+    - queues: [default, ai]
+      threads: 3
+```
+
+Override the queue per task with `queue:` to route recurring robot runs through a shared worker:
+
+```yaml title="config/recurring.yml"
+daily_digest:
+  command: "DailyDigest.run"
+  schedule: "every day at 06:00"
+  queue: ai
+```
+
+### Using robot_lab-to for overnight runs
+
+The `robot_lab-to` gem's `RobotLab::To.run` is designed for a single autonomous session, making it a natural fit for a Solid Queue recurring task:
+
+```ruby title="app/services/nightly_analysis.rb"
+class NightlyAnalysis
+  def self.run
+    RobotLab::To.run(
+      "Analyze yesterday's support tickets and generate a quality report",
+      max_iterations: 10,
+      stop_when: "Report is written to disk"
+    )
+  end
+end
+```
+
+```yaml title="config/recurring.yml"
+nightly_analysis:
+  command: "NightlyAnalysis.run"
+  schedule: "every day at 02:00"
+  queue: ai
+```
+
+> `RobotLab::To.run` is synchronous. Solid Queue runs it inside a worker process — this is intentional. Each nightly run blocks its worker for the duration of the autonomous loop.
+
 ## Testing
 
 ### Test Configuration
