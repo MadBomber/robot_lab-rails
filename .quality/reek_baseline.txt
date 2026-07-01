@@ -1,0 +1,3 @@
+2	lib/generators/robot_lab/install_generator.rb
+1	lib/robot_lab/rails_integration/engine.rb
+3	lib/robot_lab/rails_integration/job.rb
