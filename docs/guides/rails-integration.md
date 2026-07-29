@@ -121,7 +121,14 @@ RobotLab.config.streaming_enabled          #=> true
 rails generate robot_lab:robot Support
 rails generate robot_lab:robot Billing --description="Handles billing inquiries"
 rails generate robot_lab:robot Router --routing
+rails generate robot_lab:robot Support --tools=order_lookup,refund_processor
 ```
+
+Options:
+
+- `--description` — Robot description (defaults to `"A helpful <Name> robot"`)
+- `--routing` — Generate a routing robot (subclasses `RobotLab::Robot`, overrides `call`) instead of the plain factory-style robot
+- `--tools` — List of tool names; emitted as commented-out entries in the generated `tools` array for you to uncomment and wire up
 
 ### Robot Class
 
@@ -659,6 +666,10 @@ class RobotLabThread < ApplicationRecord
   def last_result
     results.order(sequence_number: :desc).first
   end
+
+  def message_count
+    results.count
+  end
 end
 ```
 
@@ -673,14 +684,24 @@ class RobotLabResult < ApplicationRecord
 
   validates :session_id, presence: true
   validates :robot_name, presence: true
+  validates :sequence_number, presence: true,
+                              numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
   default_scope { order(sequence_number: :asc) }
+
+  def output_messages
+    (output_data || []).map { |d| RobotLab::Message.from_hash(d.symbolize_keys) }
+  end
+
+  def tool_call_messages
+    (tool_calls_data || []).map { |d| RobotLab::Message.from_hash(d.symbolize_keys) }
+  end
 
   def to_robot_result
     RobotLab::RobotResult.new(
       robot_name: robot_name,
-      output: (output_data || []).map { |d| RobotLab::Message.from_hash(d.symbolize_keys) },
-      tool_calls: (tool_calls_data || []).map { |d| RobotLab::Message.from_hash(d.symbolize_keys) },
+      output: output_messages,
+      tool_calls: tool_call_messages,
       stop_reason: stop_reason
     )
   end
