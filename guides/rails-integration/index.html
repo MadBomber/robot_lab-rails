@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -1983,7 +1983,14 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>rails<span class="w"> </span>generate<span class="w"> </span>robot_lab:robot<span class="w"> </span>Support
 </span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>rails<span class="w"> </span>generate<span class="w"> </span>robot_lab:robot<span class="w"> </span>Billing<span class="w"> </span>--description<span class="o">=</span><span class="s2">&quot;Handles billing inquiries&quot;</span>
 </span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>rails<span class="w"> </span>generate<span class="w"> </span>robot_lab:robot<span class="w"> </span>Router<span class="w"> </span>--routing
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>rails<span class="w"> </span>generate<span class="w"> </span>robot_lab:robot<span class="w"> </span>Support<span class="w"> </span>--tools<span class="o">=</span>order_lookup,refund_processor
 </span></code></pre></div>
+<p>Options:</p>
+<ul>
+<li><code>--description</code> — Robot description (defaults to <code>"A helpful &lt;Name&gt; robot"</code>)</li>
+<li><code>--routing</code> — Generate a routing robot (subclasses <code>RobotLab::Robot</code>, overrides <code>call</code>) instead of the plain factory-style robot</li>
+<li><code>--tools</code> — List of tool names; emitted as commented-out entries in the generated <code>tools</code> array for you to uncomment and wire up</li>
+</ul>
 <h3 id="robot-class">Robot Class<a class="headerlink" href="#robot-class" title="Permanent link">&para;</a></h3>
 <p>Robots are plain Ruby classes with a <code>.build</code> factory method that calls <code>RobotLab.build</code> with keyword arguments:</p>
 <div class="language-ruby highlight"><span class="filename">app/robots/support_robot.rb</span><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># frozen_string_literal: true</span>
@@ -2405,7 +2412,11 @@
 </span><span id="__span-38-14"><a id="__codelineno-38-14" name="__codelineno-38-14" href="#__codelineno-38-14"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">last_result</span>
 </span><span id="__span-38-15"><a id="__codelineno-38-15" name="__codelineno-38-15" href="#__codelineno-38-15"></a><span class="w">    </span><span class="n">results</span><span class="o">.</span><span class="n">order</span><span class="p">(</span><span class="ss">sequence_number</span><span class="p">:</span><span class="w"> </span><span class="ss">:desc</span><span class="p">)</span><span class="o">.</span><span class="n">first</span>
 </span><span id="__span-38-16"><a id="__codelineno-38-16" name="__codelineno-38-16" href="#__codelineno-38-16"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-38-17"><a id="__codelineno-38-17" name="__codelineno-38-17" href="#__codelineno-38-17"></a><span class="k">end</span>
+</span><span id="__span-38-17"><a id="__codelineno-38-17" name="__codelineno-38-17" href="#__codelineno-38-17"></a>
+</span><span id="__span-38-18"><a id="__codelineno-38-18" name="__codelineno-38-18" href="#__codelineno-38-18"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">message_count</span>
+</span><span id="__span-38-19"><a id="__codelineno-38-19" name="__codelineno-38-19" href="#__codelineno-38-19"></a><span class="w">    </span><span class="n">results</span><span class="o">.</span><span class="n">count</span>
+</span><span id="__span-38-20"><a id="__codelineno-38-20" name="__codelineno-38-20" href="#__codelineno-38-20"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-38-21"><a id="__codelineno-38-21" name="__codelineno-38-21" href="#__codelineno-38-21"></a><span class="k">end</span>
 </span></code></pre></div>
 <h3 id="result-model">Result Model<a class="headerlink" href="#result-model" title="Permanent link">&para;</a></h3>
 <div class="language-ruby highlight"><span class="filename">app/models/robot_lab_result.rb</span><pre><span></span><code><span id="__span-39-1"><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">RobotLabResult</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">ApplicationRecord</span>
@@ -2416,18 +2427,28 @@
 </span><span id="__span-39-6"><a id="__codelineno-39-6" name="__codelineno-39-6" href="#__codelineno-39-6"></a>
 </span><span id="__span-39-7"><a id="__codelineno-39-7" name="__codelineno-39-7" href="#__codelineno-39-7"></a><span class="w">  </span><span class="n">validates</span><span class="w"> </span><span class="ss">:session_id</span><span class="p">,</span><span class="w"> </span><span class="ss">presence</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span>
 </span><span id="__span-39-8"><a id="__codelineno-39-8" name="__codelineno-39-8" href="#__codelineno-39-8"></a><span class="w">  </span><span class="n">validates</span><span class="w"> </span><span class="ss">:robot_name</span><span class="p">,</span><span class="w"> </span><span class="ss">presence</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span>
-</span><span id="__span-39-9"><a id="__codelineno-39-9" name="__codelineno-39-9" href="#__codelineno-39-9"></a>
-</span><span id="__span-39-10"><a id="__codelineno-39-10" name="__codelineno-39-10" href="#__codelineno-39-10"></a><span class="w">  </span><span class="n">default_scope</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">order</span><span class="p">(</span><span class="ss">sequence_number</span><span class="p">:</span><span class="w"> </span><span class="ss">:asc</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-39-9"><a id="__codelineno-39-9" name="__codelineno-39-9" href="#__codelineno-39-9"></a><span class="w">  </span><span class="n">validates</span><span class="w"> </span><span class="ss">:sequence_number</span><span class="p">,</span><span class="w"> </span><span class="ss">presence</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">,</span>
+</span><span id="__span-39-10"><a id="__codelineno-39-10" name="__codelineno-39-10" href="#__codelineno-39-10"></a><span class="w">                              </span><span class="ss">numericality</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">only_integer</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">,</span><span class="w"> </span><span class="ss">greater_than_or_equal_to</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-39-11"><a id="__codelineno-39-11" name="__codelineno-39-11" href="#__codelineno-39-11"></a>
-</span><span id="__span-39-12"><a id="__codelineno-39-12" name="__codelineno-39-12" href="#__codelineno-39-12"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">to_robot_result</span>
-</span><span id="__span-39-13"><a id="__codelineno-39-13" name="__codelineno-39-13" href="#__codelineno-39-13"></a><span class="w">    </span><span class="no">RobotLab</span><span class="o">::</span><span class="no">RobotResult</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
-</span><span id="__span-39-14"><a id="__codelineno-39-14" name="__codelineno-39-14" href="#__codelineno-39-14"></a><span class="w">      </span><span class="ss">robot_name</span><span class="p">:</span><span class="w"> </span><span class="n">robot_name</span><span class="p">,</span>
-</span><span id="__span-39-15"><a id="__codelineno-39-15" name="__codelineno-39-15" href="#__codelineno-39-15"></a><span class="w">      </span><span class="ss">output</span><span class="p">:</span><span class="w"> </span><span class="p">(</span><span class="n">output_data</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">[]</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">d</span><span class="o">|</span><span class="w"> </span><span class="no">RobotLab</span><span class="o">::</span><span class="no">Message</span><span class="o">.</span><span class="n">from_hash</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">symbolize_keys</span><span class="p">)</span><span class="w"> </span><span class="p">},</span>
-</span><span id="__span-39-16"><a id="__codelineno-39-16" name="__codelineno-39-16" href="#__codelineno-39-16"></a><span class="w">      </span><span class="ss">tool_calls</span><span class="p">:</span><span class="w"> </span><span class="p">(</span><span class="n">tool_calls_data</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">[]</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">d</span><span class="o">|</span><span class="w"> </span><span class="no">RobotLab</span><span class="o">::</span><span class="no">Message</span><span class="o">.</span><span class="n">from_hash</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">symbolize_keys</span><span class="p">)</span><span class="w"> </span><span class="p">},</span>
-</span><span id="__span-39-17"><a id="__codelineno-39-17" name="__codelineno-39-17" href="#__codelineno-39-17"></a><span class="w">      </span><span class="ss">stop_reason</span><span class="p">:</span><span class="w"> </span><span class="n">stop_reason</span>
-</span><span id="__span-39-18"><a id="__codelineno-39-18" name="__codelineno-39-18" href="#__codelineno-39-18"></a><span class="w">    </span><span class="p">)</span>
-</span><span id="__span-39-19"><a id="__codelineno-39-19" name="__codelineno-39-19" href="#__codelineno-39-19"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-39-20"><a id="__codelineno-39-20" name="__codelineno-39-20" href="#__codelineno-39-20"></a><span class="k">end</span>
+</span><span id="__span-39-12"><a id="__codelineno-39-12" name="__codelineno-39-12" href="#__codelineno-39-12"></a><span class="w">  </span><span class="n">default_scope</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">order</span><span class="p">(</span><span class="ss">sequence_number</span><span class="p">:</span><span class="w"> </span><span class="ss">:asc</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-39-13"><a id="__codelineno-39-13" name="__codelineno-39-13" href="#__codelineno-39-13"></a>
+</span><span id="__span-39-14"><a id="__codelineno-39-14" name="__codelineno-39-14" href="#__codelineno-39-14"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">output_messages</span>
+</span><span id="__span-39-15"><a id="__codelineno-39-15" name="__codelineno-39-15" href="#__codelineno-39-15"></a><span class="w">    </span><span class="p">(</span><span class="n">output_data</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">[]</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">d</span><span class="o">|</span><span class="w"> </span><span class="no">RobotLab</span><span class="o">::</span><span class="no">Message</span><span class="o">.</span><span class="n">from_hash</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">symbolize_keys</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-39-16"><a id="__codelineno-39-16" name="__codelineno-39-16" href="#__codelineno-39-16"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-39-17"><a id="__codelineno-39-17" name="__codelineno-39-17" href="#__codelineno-39-17"></a>
+</span><span id="__span-39-18"><a id="__codelineno-39-18" name="__codelineno-39-18" href="#__codelineno-39-18"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">tool_call_messages</span>
+</span><span id="__span-39-19"><a id="__codelineno-39-19" name="__codelineno-39-19" href="#__codelineno-39-19"></a><span class="w">    </span><span class="p">(</span><span class="n">tool_calls_data</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">[]</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">d</span><span class="o">|</span><span class="w"> </span><span class="no">RobotLab</span><span class="o">::</span><span class="no">Message</span><span class="o">.</span><span class="n">from_hash</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">symbolize_keys</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-39-20"><a id="__codelineno-39-20" name="__codelineno-39-20" href="#__codelineno-39-20"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-39-21"><a id="__codelineno-39-21" name="__codelineno-39-21" href="#__codelineno-39-21"></a>
+</span><span id="__span-39-22"><a id="__codelineno-39-22" name="__codelineno-39-22" href="#__codelineno-39-22"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">to_robot_result</span>
+</span><span id="__span-39-23"><a id="__codelineno-39-23" name="__codelineno-39-23" href="#__codelineno-39-23"></a><span class="w">    </span><span class="no">RobotLab</span><span class="o">::</span><span class="no">RobotResult</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
+</span><span id="__span-39-24"><a id="__codelineno-39-24" name="__codelineno-39-24" href="#__codelineno-39-24"></a><span class="w">      </span><span class="ss">robot_name</span><span class="p">:</span><span class="w"> </span><span class="n">robot_name</span><span class="p">,</span>
+</span><span id="__span-39-25"><a id="__codelineno-39-25" name="__codelineno-39-25" href="#__codelineno-39-25"></a><span class="w">      </span><span class="ss">output</span><span class="p">:</span><span class="w"> </span><span class="n">output_messages</span><span class="p">,</span>
+</span><span id="__span-39-26"><a id="__codelineno-39-26" name="__codelineno-39-26" href="#__codelineno-39-26"></a><span class="w">      </span><span class="ss">tool_calls</span><span class="p">:</span><span class="w"> </span><span class="n">tool_call_messages</span><span class="p">,</span>
+</span><span id="__span-39-27"><a id="__codelineno-39-27" name="__codelineno-39-27" href="#__codelineno-39-27"></a><span class="w">      </span><span class="ss">stop_reason</span><span class="p">:</span><span class="w"> </span><span class="n">stop_reason</span>
+</span><span id="__span-39-28"><a id="__codelineno-39-28" name="__codelineno-39-28" href="#__codelineno-39-28"></a><span class="w">    </span><span class="p">)</span>
+</span><span id="__span-39-29"><a id="__codelineno-39-29" name="__codelineno-39-29" href="#__codelineno-39-29"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-39-30"><a id="__codelineno-39-30" name="__codelineno-39-30" href="#__codelineno-39-30"></a><span class="k">end</span>
 </span></code></pre></div>
 <h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
 <h3 id="1-use-service-objects">1. Use Service Objects<a class="headerlink" href="#1-use-service-objects" title="Permanent link">&para;</a></h3>
@@ -2621,7 +2642,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.path", "navigation.indexes", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "search.share", "header.autohide", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "content.action.edit", "content.action.view"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>
