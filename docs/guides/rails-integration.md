@@ -121,7 +121,14 @@ RobotLab.config.streaming_enabled          #=> true
 rails generate robot_lab:robot Support
 rails generate robot_lab:robot Billing --description="Handles billing inquiries"
 rails generate robot_lab:robot Router --routing
+rails generate robot_lab:robot Support --tools=order_lookup,refund_processor
 ```
+
+Options:
+
+- `--description` — Robot description (defaults to `"A helpful <Name> robot"`)
+- `--routing` — Generate a routing robot (subclasses `RobotLab::Robot`, overrides `call`) instead of the plain factory-style robot
+- `--tools` — List of tool names; emitted as commented-out entries in the generated `tools` array for you to uncomment and wire up
 
 ### Robot Class
 
@@ -503,6 +510,83 @@ class ProcessMessageJob < ApplicationJob
 end
 ```
 
+## Recurring Tasks (Solid Queue)
+
+When using [Solid Queue](https://github.com/rails/solid_queue), you can schedule robot runs without writing a thin wrapper job. Solid Queue's `command:` key in `config/recurring.yml` calls a class method directly, eliminating unnecessary glue code.
+
+### Orchestrator class
+
+Keep the scheduling logic in a plain Ruby class. The class method fans out per-item jobs — or runs a robot directly:
+
+```ruby title="app/services/daily_digest.rb"
+class DailyDigest
+  def self.run
+    User.digest_subscribers.find_each do |user|
+      DailyDigestJob.perform_later(user_id: user.id)
+    end
+  end
+end
+```
+
+### Wiring in recurring.yml
+
+Reference the method directly in `config/recurring.yml`:
+
+```yaml title="config/recurring.yml"
+daily_digest:
+  command: "DailyDigest.run"
+  schedule: "every day at 06:00"
+```
+
+No wrapper job needed. `DailyDigest.run` is a plain class method — independently testable without enqueuing anything.
+
+### Queue configuration
+
+Solid Queue sends recurring commands to the `solid_queue_recurring` queue by default. Add a dedicated worker in `config/queue.yml` so recurring runs don't compete with your main job queues:
+
+```yaml title="config/queue.yml"
+production:
+  workers:
+    - queues: [solid_queue_recurring]
+      threads: 1
+    - queues: [default, ai]
+      threads: 3
+```
+
+Override the queue per task with `queue:` to route recurring robot runs through a shared worker:
+
+```yaml title="config/recurring.yml"
+daily_digest:
+  command: "DailyDigest.run"
+  schedule: "every day at 06:00"
+  queue: ai
+```
+
+### Using robot_lab-to for overnight runs
+
+The `robot_lab-to` gem's `RobotLab::To.run` is designed for a single autonomous session, making it a natural fit for a Solid Queue recurring task:
+
+```ruby title="app/services/nightly_analysis.rb"
+class NightlyAnalysis
+  def self.run
+    RobotLab::To.run(
+      "Analyze yesterday's support tickets and generate a quality report",
+      max_iterations: 10,
+      stop_when: "Report is written to disk"
+    )
+  end
+end
+```
+
+```yaml title="config/recurring.yml"
+nightly_analysis:
+  command: "NightlyAnalysis.run"
+  schedule: "every day at 02:00"
+  queue: ai
+```
+
+> `RobotLab::To.run` is synchronous. Solid Queue runs it inside a worker process — this is intentional. Each nightly run blocks its worker for the duration of the autonomous loop.
+
 ## Testing
 
 ### Test Configuration
@@ -582,6 +666,10 @@ class RobotLabThread < ApplicationRecord
   def last_result
     results.order(sequence_number: :desc).first
   end
+
+  def message_count
+    results.count
+  end
 end
 ```
 
@@ -596,14 +684,24 @@ class RobotLabResult < ApplicationRecord
 
   validates :session_id, presence: true
   validates :robot_name, presence: true
+  validates :sequence_number, presence: true,
+                              numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
   default_scope { order(sequence_number: :asc) }
+
+  def output_messages
+    (output_data || []).map { |d| RobotLab::Message.from_hash(d.symbolize_keys) }
+  end
+
+  def tool_call_messages
+    (tool_calls_data || []).map { |d| RobotLab::Message.from_hash(d.symbolize_keys) }
+  end
 
   def to_robot_result
     RobotLab::RobotResult.new(
       robot_name: robot_name,
-      output: (output_data || []).map { |d| RobotLab::Message.from_hash(d.symbolize_keys) },
-      tool_calls: (tool_calls_data || []).map { |d| RobotLab::Message.from_hash(d.symbolize_keys) },
+      output: output_messages,
+      tool_calls: tool_call_messages,
       stop_reason: stop_reason
     )
   end
