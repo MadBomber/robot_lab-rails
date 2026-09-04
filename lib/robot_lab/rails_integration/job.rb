@@ -18,6 +18,7 @@ module RobotLab
       retry_on StandardError, wait: 5.seconds, attempts: 3
       discard_on ActiveJob::DeserializationError
 
+      # :reek:TooManyStatements -- the job's one linear resolve/run/persist/broadcast orchestration.
       def perform(message:, robot_class: nil, thread_id: nil, **context)
         klass  = resolve_robot_class(robot_class)
         thread = setup_thread(thread_id, message)
@@ -37,6 +38,7 @@ module RobotLab
 
       private
 
+      # :reek:ControlParameter -- nil runtime_class means "fall back to the class-level robot_class DSL", a default, not a mode switch.
       def resolve_robot_class(runtime_class)
         klass = runtime_class || self.class.robot_class
         unless klass
@@ -57,6 +59,7 @@ module RobotLab
         thread
       end
 
+      # :reek:FeatureEnvy -- factory method: the job wires its own Turbo callbacks into klass.build; the robot class cannot know them.
       def build_robot(klass, thread_id)
         if thread_id && turbo_available?
           stream_name  = "robot_lab_thread_#{thread_id}"

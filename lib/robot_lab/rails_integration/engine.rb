@@ -2,6 +2,7 @@
 
 module RobotLab
   module RailsIntegration
+    # :reek:UncommunicativeVariableName -- `g` is the conventional Rails config.generators block param.
     class Engine < ::Rails::Engine
       isolate_namespace RobotLab
 
