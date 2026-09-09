@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.2.8] - 2026-09-09
+
+Released in lockstep with `robot_lab` core v0.2.8: this gem now resolves the released core gem from RubyGems instead of the local sibling checkout (local-path development remains available via `BUNDLE_GEMFILE=Gemfile.local`). Also in this release: 6 reek false positives annotated inline, reek added to the development bundle, and gem lifecycle moved to asgard with `RAILS_ROOT` set for the Rails-aware quality gates.
+
 ### Added
 - `.loki` Asgard task file: `test`, `rubocop`, `rubocop_fix`, `flog`, `flay`, `quality`, `build`, `install`, `release`, and `console` tasks via the Asgard task runner
 - `flay_check` Rake task: structural code duplication gate (mass threshold 50); integrated into the `quality` Rake task
