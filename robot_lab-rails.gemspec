@@ -13,7 +13,7 @@ Gem::Specification.new do |spec|
                      "persistence models, and generators for using robot_lab in Rails applications."
   spec.homepage = "https://github.com/MadBomber/robot_lab-rails"
   spec.license = "MIT"
-  spec.required_ruby_version = ">= 3.2.0"
+  spec.required_ruby_version = ">= 4.0"
 
   spec.metadata["allowed_push_host"]    = "https://rubygems.org"
   spec.metadata["homepage_uri"]         = spec.homepage
