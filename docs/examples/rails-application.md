@@ -13,6 +13,28 @@ This example demonstrates integrating RobotLab into a Rails application with rea
 ```ruby
 # Gemfile
 gem "robot_lab"
+gem "robot_lab-rails"
+
+# The examples below use the Claude Code agent as the model. Its provider
+# registers itself as :claude_code when required.
+gem "ruby_llm-providers-claude_code", require: "ruby_llm/providers/claude_code"
+
+# Optional: local models served by LM Studio (registers the :lms provider,
+# defaults to http://localhost:1234/v1, no API key needed).
+gem "ruby_llm-providers-lms", require: "ruby_llm/providers/lms"
+```
+
+The `claude_code` provider runs the Claude Code CLI (`claude`), which must be on your `PATH` and logged in. To use a hosted API instead, skip that gem and set a provider such as `anthropic` with its API key.
+
+With the LM Studio gem loaded, a robot can run on a local model by naming the provider when it is built:
+
+```ruby
+RobotLab.build(
+  name: "local_bot",
+  provider: :lms,
+  model: "qwen/qwen3.8-27b",
+  system_prompt: "You are a helpful assistant."
+)
 ```
 
 ### 2. Run Generator
@@ -26,7 +48,9 @@ This creates:
 - `config/initializers/robot_lab.rb`
 - `app/robots/` directory
 - `app/tools/` directory
-- Database migrations for conversation history
+- Database migration for conversation history (`db/migrate/*_create_robot_lab_tables.rb`)
+- `app/models/robot_lab_thread.rb` and `app/models/robot_lab_result.rb`
+- `app/jobs/robot_run_job.rb`
 
 ### 3. Run Migrations
 
@@ -36,32 +60,38 @@ rails db:migrate
 
 ## Configuration
 
-RobotLab uses MywayConfig for configuration. There is no `RobotLab.configure` block. Instead, configuration is loaded automatically from multiple sources in priority order:
+RobotLab uses MywayConfig for configuration. Settings are not written in a `RobotLab.configure` block (that method only yields the config object, for runtime attributes such as the logger). Instead, configuration is loaded automatically from multiple sources in priority order:
 
 1. Bundled defaults (`lib/robot_lab/config/defaults.yml`)
 2. Environment-specific overrides (development, test, production)
-3. XDG user config (`~/.config/robot_lab/config.yml`)
+3. XDG user config (`~/.config/robot_lab/robot_lab.yml`)
 4. Project config (`./config/robot_lab.yml`)
 5. Environment variables (`ROBOT_LAB_*` prefix)
 
 ### Config File
 
+In a Rails app this file is keyed by Rails environment, and only the section matching `Rails.env` is read. A top-level `defaults:` section is ignored, so share common settings with a YAML anchor. Write values as plain strings (`log_level: debug`); YAML symbols such as `:debug` are rejected when the app boots.
+
 ```yaml
 # config/robot_lab.yml
-defaults:
-  ruby_llm:
-    model: claude_code/sonnet-5.5
-    anthropic_api_key: <%= ENV['ANTHROPIC_API_KEY'] %>
+ruby_llm_shared: &ruby_llm
+  provider: claude_code
+  model: sonnet-5.5
+  anthropic_api_key: <%= ENV['ANTHROPIC_API_KEY'] %>
 
 development:
   ruby_llm:
-    log_level: :debug
+    <<: *ruby_llm
+    log_level: debug
 
 production:
   ruby_llm:
+    <<: *ruby_llm
     request_timeout: 180
     max_retries: 5
 ```
+
+The configured `model` is used by every robot built without a `model:` of its own. The configured `provider` is not applied yet: robot_lab 0.6 only uses a provider passed to the robot itself, so the robot below names it in `RobotLab.build`.
 
 ### Environment Variables
 
@@ -71,7 +101,8 @@ ROBOT_LAB_RUBY_LLM__ANTHROPIC_API_KEY=sk-ant-...
 ROBOT_LAB_RUBY_LLM__OPENAI_API_KEY=sk-...
 
 # Model configuration
-ROBOT_LAB_RUBY_LLM__MODEL=claude_code/sonnet-5.5
+ROBOT_LAB_RUBY_LLM__PROVIDER=claude_code
+ROBOT_LAB_RUBY_LLM__MODEL=sonnet-5.5
 ROBOT_LAB_RUBY_LLM__REQUEST_TIMEOUT=120
 ```
 
@@ -79,7 +110,8 @@ ROBOT_LAB_RUBY_LLM__REQUEST_TIMEOUT=120
 
 ```ruby
 # Read configuration values at runtime
-RobotLab.config.ruby_llm.model            #=> "claude_code/sonnet-5.5"
+RobotLab.config.ruby_llm.provider         #=> "claude_code"
+RobotLab.config.ruby_llm.model            #=> "sonnet-5.5"
 RobotLab.config.ruby_llm.request_timeout  #=> 120
 
 # The logger defaults to Rails.logger when running in Rails
@@ -88,7 +120,7 @@ RobotLab.config.logger  #=> Rails.logger
 
 ### Rails Engine and Railtie
 
-RobotLab provides both a Rails Engine (`RobotLab::RailsIntegration::Engine`) and a Railtie (`RobotLab::RailsIntegration::Railtie`). These are loaded automatically when Rails is detected. The Engine isolates the RobotLab namespace and adds `app/robots` and `app/tools` to the autoload paths. The Railtie loads rake tasks and generators.
+RobotLab provides both a Rails Engine (`RobotLab::RailsIntegration::Engine`) and a Railtie (`RobotLab::RailsIntegration::Railtie`). These are loaded automatically when Rails is detected. The Engine isolates the RobotLab namespace and adds your application's `app/robots` and `app/tools` to the autoload paths. The Railtie points `RobotLab.config.logger` at `Rails.logger` and registers the generators.
 
 ## Models
 
@@ -126,7 +158,7 @@ Robots are built using `RobotLab.build` with named parameters. Tools are Ruby cl
 class GetUserInfoTool < RubyLLM::Tool
   description "Get information about the current user"
 
-  param :user_id, type: :integer, desc: "The user ID to look up"
+  parameter :user_id, type: :integer, description: "The user ID to look up"
 
   def execute(user_id:)
     user = User.find(user_id)
@@ -145,8 +177,8 @@ end
 class GetOrdersTool < RubyLLM::Tool
   description "Get user's recent orders"
 
-  param :user_id, type: :integer, desc: "The user ID"
-  param :limit, type: :integer, desc: "Number of orders to return", default: 5
+  parameter :user_id, type: :integer, description: "The user ID"
+  parameter :limit, type: :integer, description: "Number of orders to return (default 5)", required: false
 
   def execute(user_id:, limit: 5)
     orders = Order.where(user_id: user_id)
@@ -168,10 +200,10 @@ end
 class CreateTicketTool < RubyLLM::Tool
   description "Create a support ticket"
 
-  param :user_id, type: :integer, desc: "The user ID"
-  param :subject, type: :string, desc: "Ticket subject"
-  param :description, type: :string, desc: "Ticket description"
-  param :priority, type: :string, desc: "Priority level", enum: %w[low medium high]
+  parameter :user_id, type: :integer, description: "The user ID"
+  parameter :subject, type: :string, description: "Ticket subject"
+  parameter :description, type: :string, description: "Ticket description"
+  parameter :priority, type: :string, description: "Priority level: low, medium, or high", required: false
 
   def execute(user_id:, subject:, description:, priority: "medium")
     ticket = SupportTicket.create!(
@@ -198,6 +230,8 @@ class SupportRobot
   def self.build(user_id:)
     RobotLab.build(
       name: "support",
+      provider: :claude_code,
+      model: "sonnet-5.5",
       system_prompt: <<~PROMPT,
         You are a helpful customer support assistant for our company.
         Be friendly, professional, and thorough in your responses.
@@ -405,7 +439,7 @@ bin/dev
 ## Key Concepts
 
 1. **Robot Factory**: `RobotLab.build(name:, system_prompt:, local_tools:, ...)` creates robot instances
-2. **MywayConfig**: Configuration via YAML files and environment variables, not a configure block
+2. **MywayConfig**: Configuration via YAML files and environment variables; `RobotLab.configure` is only for runtime attributes such as the logger
 3. **`robot.run("message")`**: Send a message as a positional string argument
 4. **`result.last_text_content`**: Extract the response text from a `RobotResult`
 5. **Memory**: Robots have `robot.memory` for key-value storage; networks share memory
@@ -416,4 +450,4 @@ bin/dev
 ## See Also
 
 - [Rails Integration Guide](../guides/rails-integration.md)
-- [Streaming Guide](../guides/streaming.md)
+- [Streaming Guide](https://madbomber.github.io/robot_lab/guides/streaming/)

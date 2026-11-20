@@ -110,4 +110,8 @@ module RobotLab
       end
     end
   end
+
+  # Public name used by the generators, the generated jobs and the docs:
+  #   class SupportJob < RobotLab::Job
+  Job = RailsIntegration::Job
 end

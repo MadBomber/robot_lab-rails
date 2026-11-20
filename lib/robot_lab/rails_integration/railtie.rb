@@ -6,13 +6,7 @@ module RobotLab
       config.robot_lab = ActiveSupport::OrderedOptions.new
 
       initializer "robot_lab.configuration" do |app|
-        RobotLab.configure do |config|
-          rails_config = app.config.robot_lab
-
-          config.default_model    = rails_config.default_model    if rails_config.default_model
-          config.default_provider = rails_config.default_provider if rails_config.default_provider
-          config.logger           = ::Rails.logger
-        end
+        Configurator.apply(RobotLab.config, app.config.robot_lab, logger: ::Rails.logger)
       end
 
       initializer "robot_lab.active_record" do

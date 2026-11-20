@@ -14,18 +14,18 @@ ruby -Ilib:test test/<file>  # Run a single test file
 
 # Inside a Rails app using this gem:
 rails g robot_lab:install            # migration, models, initializer, job
-rails g robot_lab:robot MyRobot      # app/robots/my_robot.rb + test
-rails g robot_lab:robot MyRouter --routing  # routing robot variant
-rails g robot_lab:job MyRobot        # app/jobs/my_robot_job.rb
+rails g robot_lab:robot Support      # app/robots/support_robot.rb (SupportRobot) + test/robots/support_robot_test.rb
+rails g robot_lab:robot Router --routing    # routing robot variant (RouterRobot < RobotLab::Robot)
+rails g robot_lab:job Support        # app/jobs/support_job.rb (SupportJob, bound to SupportRobot)
 ```
 
 ## Architecture
 
-**`RailsIntegration::Engine`** (`rails_integration/engine.rb`) — Rails Engine with `isolate_namespace RobotLab`. Adds `app/robots/` and `app/tools/` to Rails autoload paths so robot and tool classes are autoloaded like models.
+**`RailsIntegration::Engine`** (`rails_integration/engine.rb`) — Rails Engine with `isolate_namespace RobotLab`. Adds the host application's `app/robots/` and `app/tools/` (resolved against `app.root`, via `Engine.add_autoload_paths`) to Rails autoload paths so robot and tool classes are autoloaded like models.
 
-**`RailsIntegration::Railtie`** (`rails_integration/railtie.rb`) — Reads `config.robot_lab.default_model` and `config.robot_lab.default_provider` from the Rails app config and applies them to `RobotLab.configure`. Sets `RobotLab.config.logger = Rails.logger` so all RobotLab log output goes through Rails logging.
+**`RailsIntegration::Railtie`** (`rails_integration/railtie.rb`) — Hands `RobotLab.config`, the app's `config.robot_lab` and `Rails.logger` to `RailsIntegration::Configurator.apply` (`rails_integration/configurator.rb`, Rails-free so it is unit-testable). That writes `config.robot_lab.default_model` / `default_provider` to `RobotLab.config.ruby_llm.model` / `.provider` when set (`RobotLab::Config` has no top-level `default_model=`), and sets `RobotLab.config.logger = Rails.logger` so all RobotLab log output goes through Rails logging. Core 0.6 uses `ruby_llm.model` when building robots but not `ruby_llm.provider` — a robot still needs `provider:` passed to `RobotLab.build`.
 
-**`RailsIntegration::Job`** (`rails_integration/job.rb`) — `ActiveJob::Base` subclass. Subclass with `robot_class MyRobot` DSL, or pass `robot_class:` at enqueue time.
+**`RailsIntegration::Job`** (`rails_integration/job.rb`) — `ActiveJob::Base` subclass, also exposed as `RobotLab::Job` (the constant is assigned at the bottom of `job.rb`). Subclass with `robot_class MyRobot` DSL, or pass `robot_class:` at enqueue time.
 
 ```ruby
 class SupportRobotJob < RobotLab::Job
@@ -52,7 +52,7 @@ tool_cb = TurboStreamCallbacks.build_tool_call_callback(stream_name: "robot_lab_
 
 Templates live in `lib/generators/robot_lab/templates/`. The install generator creates:
 - `config/initializers/robot_lab.rb`
-- `db/migrate/create_robot_lab_tables.rb` (RobotLabThread + RobotLabResult tables)
+- `db/migrate/<timestamp>_create_robot_lab_tables.rb` (RobotLabThread + RobotLabResult tables)
 - `app/models/robot_lab_thread.rb` / `app/models/robot_lab_result.rb`
 - `app/jobs/robot_run_job.rb`
 - Empty `app/robots/` and `app/tools/` directories
@@ -67,5 +67,6 @@ Templates live in `lib/generators/robot_lab/templates/`. The install generator c
 ## Testing
 
 - Minitest with SimpleCov (branch coverage tracked, no minimum threshold enforced yet)
-- Tests stub Rails, ActiveJob, and Turbo — no Rails app is loaded
-- Coverage baseline: ~80% line / ~82% branch
+- Unit tests stub Rails, ActiveJob, and Turbo — no Rails app is loaded in the test process
+- `rails_boot_test.rb` and `generators_test.rb` boot a real minimal Rails app / run the real generators in a subprocess (`test/support/*_probe.rb`); name generator task methods so they do not shadow Rails helpers (`create_migration` is taken by `Rails::Generators::Migration`)
+- Coverage baseline: ~83% line / ~84% branch (subprocess runs are not counted)

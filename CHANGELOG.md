@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+### Fixed
+
+- **`RobotLab::Job` is now defined** (an alias of `RobotLab::RailsIntegration::Job`). Generated jobs and the documented snippets referenced a constant that did not exist and raised `NameError`.
+- **`rails g robot_lab:install` completes.** Its migration step was named `create_migration`, which shadowed the Rails generator method of the same name and raised `ArgumentError` after writing only the initializer.
+- **`config.robot_lab.default_model` / `default_provider` no longer crash boot.** They are written to `RobotLab.config.ruby_llm.model` / `.provider` by the new `RailsIntegration::Configurator`.
+- **`app/robots` and `app/tools` autoload paths resolve against the application root**, not the gem's directory.
+- **The gem loads in an app that has not yet loaded ActiveJob**; it now requires `active_job` before defining the job class.
+- **`rails g robot_lab:robot NAME --tools=a,b`** accepts comma- or space-separated tool names.
+
 ## [0.6.1] - 2026-11-19
 
 ### Changed

@@ -23,7 +23,10 @@ module RobotLab
         template "initializer.rb.tt", "config/initializers/robot_lab.rb"
       end
 
-      def create_migration
+      # Not named `create_migration`: that would override
+      # Rails::Generators::Migration#create_migration, which migration_template
+      # calls internally with three arguments.
+      def create_migration_file
         return if options[:skip_migration]
 
         migration_template "migration.rb.tt", "db/migrate/create_robot_lab_tables.rb"
@@ -56,7 +59,7 @@ module RobotLab
         say "Next steps:"
         say "  1. Run migrations: rails db:migrate"
         say "  2. Configure your LLM API keys in config/initializers/robot_lab.rb"
-        say "  3. Generate your first robot: rails g robot_lab:robot MyRobot"
+        say "  3. Generate your first robot: rails g robot_lab:robot Support"
         say "  4. Enqueue robot runs via RobotRunJob (app/jobs/robot_run_job.rb)" unless options[:skip_job]
         say ""
       end

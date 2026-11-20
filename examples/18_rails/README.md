@@ -10,7 +10,7 @@ Minimal Rails 8 app that demonstrates RobotLab's full Rails integration:
 
 ## Prerequisites
 
-- Ruby 3.2+
+- Ruby 4.0.9+ (required by `robot_lab-rails`)
 - An LLM API key (e.g. `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in your env)
 
 ## Setup
