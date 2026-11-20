@@ -48,6 +48,12 @@ class RobotLab::RailsIntegration::JobTest < Minitest::Test
     remove_turbo_stub if turbo_defined?
   end
 
+  # ── RobotLab::Job alias ──────────────────────────────────────────────────────
+
+  def test_robot_lab_job_is_the_job_base_class
+    assert_same RobotLab::RailsIntegration::Job, RobotLab::Job
+  end
+
   # ── robot_class DSL ──────────────────────────────────────────────────────────
 
   def test_robot_class_defaults_to_nil

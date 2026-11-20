@@ -4,6 +4,33 @@ RobotLab integrates seamlessly with Ruby on Rails applications.
 
 ## Installation
 
+### Gemfile
+
+```ruby
+gem "robot_lab-rails"
+
+# The examples in this guide use the Claude Code agent as the model. Its
+# provider registers itself as :claude_code when required.
+gem "ruby_llm-providers-claude_code", require: "ruby_llm/providers/claude_code"
+
+# Optional: local models served by LM Studio (registers the :lms provider,
+# defaults to http://localhost:1234/v1, no API key needed).
+gem "ruby_llm-providers-lms", require: "ruby_llm/providers/lms"
+```
+
+The `claude_code` provider runs the Claude Code CLI (`claude`), which must be on your `PATH` and logged in. To use a hosted API instead, skip that gem and set a provider such as `anthropic` with its API key.
+
+With the LM Studio gem loaded, a robot can run on a local model by naming the provider when it is built:
+
+```ruby
+RobotLab.build(
+  name: "local_bot",
+  provider: :lms,
+  model: "qwen/qwen3.8-27b",
+  system_prompt: "You are a helpful assistant."
+)
+```
+
 ### Generate Files
 
 ```bash
@@ -39,39 +66,42 @@ RobotLab uses [MywayConfig](https://github.com/madbomber/myway_config) for stati
 
 1. **Bundled defaults** (`lib/robot_lab/config/defaults.yml`)
 2. **Environment-specific overrides** (development, test, production sections)
-3. **XDG user config** (`~/.config/robot_lab/config.yml`)
+3. **XDG user config** (`~/.config/robot_lab/robot_lab.yml`)
 4. **Project config** (`./config/robot_lab.yml`)
 5. **Environment variables** (`ROBOT_LAB_*` prefix)
 
 ### Project Config File
 
-```yaml title="config/robot_lab.yml"
-defaults:
-  ruby_llm:
-    anthropic_api_key: <%= ENV['ANTHROPIC_API_KEY'] %>
-    openai_api_key: <%= ENV['OPENAI_API_KEY'] %>
-    model: claude_code/sonnet-5.5
-    request_timeout: 180
+In a Rails app `config/robot_lab.yml` is keyed by Rails environment, and only the section matching `Rails.env` is read. A top-level `defaults:` section is ignored here (it exists only in the gem's bundled `defaults.yml`), so share common settings with a YAML anchor. The file is run through ERB. Write values as plain strings (`log_level: debug`); YAML symbols such as `:debug` are rejected when the app boots.
 
-  # Template path auto-detected as app/prompts in Rails
-  # template_path: app/prompts
+```yaml title="config/robot_lab.yml"
+ruby_llm_shared: &ruby_llm
+  anthropic_api_key: <%= ENV['ANTHROPIC_API_KEY'] %>
+  openai_api_key: <%= ENV['OPENAI_API_KEY'] %>
+  provider: claude_code
+  model: sonnet-5.5
+  request_timeout: 180
 
 development:
+  # Template path auto-detected as app/prompts in Rails
+  # template_path: app/prompts
   ruby_llm:
-    model: claude-haiku-3
-    log_level: :debug
+    <<: *ruby_llm
+    log_level: debug
 
 test:
   streaming_enabled: false
   ruby_llm:
-    model: claude-3-haiku-20240307
+    model: claude-haiku-4-5
     request_timeout: 30
 
 production:
   ruby_llm:
-    request_timeout: 180
+    <<: *ruby_llm
     max_retries: 5
 ```
+
+The configured `model` is used by every robot that is built without a `model:` of its own. The configured `provider` is not applied yet: robot_lab 0.6 only uses a provider passed to the robot itself, so name it in `RobotLab.build` as the examples in this guide do (`provider: :claude_code`).
 
 ### Environment Variables
 
@@ -79,7 +109,8 @@ Environment variables use the `ROBOT_LAB_` prefix with double underscores for ne
 
 ```bash
 ROBOT_LAB_RUBY_LLM__ANTHROPIC_API_KEY=sk-ant-...
-ROBOT_LAB_RUBY_LLM__MODEL=claude_code/sonnet-5.5
+ROBOT_LAB_RUBY_LLM__PROVIDER=claude_code
+ROBOT_LAB_RUBY_LLM__MODEL=sonnet-5.5
 ROBOT_LAB_RUBY_LLM__REQUEST_TIMEOUT=180
 ```
 
@@ -87,29 +118,31 @@ RobotLab also falls back to standard provider environment variables (e.g. `ANTHR
 
 ### Initializer
 
-Use `RobotLab.configure` to set runtime attributes. The generated initializer wires the logger to `Rails.logger`:
+The generated initializer wires the logger to `Rails.logger` (below a comment block that summarizes the configuration sources above):
 
 ```ruby title="config/initializers/robot_lab.rb"
 # frozen_string_literal: true
 
+# Set the RobotLab logger to use Rails.logger
+RobotLab.config.logger = Rails.logger
+```
+
+`RobotLab.configure` yields the same config object if you prefer a block for runtime attributes:
+
+```ruby
 RobotLab.configure do |c|
   c.logger = Rails.logger
 end
-```
-
-You can also assign it directly if you prefer a one-liner:
-
-```ruby
-RobotLab.config.logger = Rails.logger
 ```
 
 ### Accessing Configuration
 
 ```ruby
 # Read configuration values
-RobotLab.config.ruby_llm.model             #=> "claude_code/sonnet-5.5"
+RobotLab.config.ruby_llm.provider          #=> "claude_code"
+RobotLab.config.ruby_llm.model             #=> "sonnet-5.5"
 RobotLab.config.ruby_llm.anthropic_api_key #=> "sk-ant-..."
-RobotLab.config.ruby_llm.request_timeout   #=> 120
+RobotLab.config.ruby_llm.request_timeout   #=> 180
 RobotLab.config.streaming_enabled          #=> true
 ```
 
@@ -143,7 +176,8 @@ class SupportRobot
       name: "support",
       description: "Handles customer support inquiries",
       system_prompt: "You are a helpful support assistant.",
-      model: "claude_code/sonnet-5.5",
+      provider: :claude_code,
+      model: "sonnet-5.5",
       local_tools: [OrderLookup],
       **options
     )
@@ -221,7 +255,7 @@ Tools subclass `RobotLab::Tool` (which extends `RubyLLM::Tool`):
 
 class OrderLookup < RobotLab::Tool
   description "Look up an order by ID"
-  param :order_id, type: "string", desc: "The order ID to look up"
+  parameter :order_id, type: "string", description: "The order ID to look up"
 
   def execute(order_id:)
     order = Order.find_by(id: order_id)
@@ -301,7 +335,7 @@ description: Customer support assistant
 parameters:
   company_name: null
   tone: friendly
-model: claude_code/sonnet-5.5
+model: sonnet-5.5
 temperature: 0.7
 ---
 You are a support agent for <%= company_name %>.
@@ -317,9 +351,11 @@ Your responsibilities:
 
 ```ruby
 # Pass context to fill template parameters
+# The provider cannot be set in front matter, so name it here.
 robot = RobotLab.build(
   name: "support",
   template: :support,
+  provider: :claude_code,
   context: { company_name: "Acme Corp" }
 )
 
@@ -449,7 +485,7 @@ When `turbo-rails` is installed, `RobotLab::Job` automatically streams content t
 Subscribe to the thread's Turbo Stream channel in your view:
 
 ```erb
-<%%= turbo_stream_from "robot_lab_thread_#{@thread_id}" %>
+<%= turbo_stream_from "robot_lab_thread_#{@thread_id}" %>
 
 <div id="robot_response"></div>
 <div id="robot_tools"></div>
@@ -598,7 +634,7 @@ test:
   max_iterations: 3
   streaming_enabled: false
   ruby_llm:
-    model: claude-3-haiku-20240307
+    model: claude-haiku-4-5
     request_timeout: 30
     max_retries: 1
 ```
@@ -616,7 +652,7 @@ class SupportRobotTest < ActiveSupport::TestCase
 
   test "robot has correct model" do
     robot = SupportRobot.build
-    assert_equal "claude_code/sonnet-5.5", robot.model
+    assert_equal "sonnet-5.5", robot.model
   end
 
   test "robot has local tools" do
@@ -782,5 +818,5 @@ end
 
 ## Next Steps
 
-- [Building Robots](building-robots.md) - Robot patterns
-- [Creating Networks](creating-networks.md) - Network configuration
+- [Building Robots](https://madbomber.github.io/robot_lab/guides/building-robots/) - Robot patterns
+- [Creating Networks](https://madbomber.github.io/robot_lab/guides/creating-networks/) - Network configuration

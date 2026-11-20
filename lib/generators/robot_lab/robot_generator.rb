@@ -32,8 +32,9 @@ module RobotLab
         options[:description] || "A helpful #{class_name.titleize} robot"
       end
 
+      # Accepts both `--tools a b` (Thor's array syntax) and `--tools=a,b`.
       def robot_tools
-        options[:tools]
+        options[:tools].flat_map { it.split(",") }.map(&:strip).reject(&:empty?)
       end
     end
   end

@@ -6,33 +6,49 @@
 #
 #   1. Bundled defaults (lib/robot_lab/config/defaults.yml)
 #   2. Environment-specific overrides (development, test, production)
-#   3. XDG user config (~/.config/robot_lab/config.yml)
+#   3. XDG user config (~/.config/robot_lab/robot_lab.yml)
 #   4. Project config (./config/robot_lab.yml)
 #   5. Environment variables (ROBOT_LAB_* prefix)
 #
-# Create config/robot_lab.yml for project-specific settings:
+# Create config/robot_lab.yml for project-specific settings. In a Rails app
+# the file is keyed by Rails environment and only the section matching
+# Rails.env is read (a top-level `defaults:` section is ignored), so share
+# common settings with a YAML anchor. Write values as plain strings
+# (log_level: debug) -- YAML symbols such as :debug are rejected at boot.
 #
-#   defaults:
-#     ruby_llm:
-#       anthropic_api_key: <%%= ENV['ANTHROPIC_API_KEY'] %>
-#       openai_api_key: <%%= ENV['OPENAI_API_KEY'] %>
-#       model: claude_code/sonnet-5.5
-#       request_timeout: 180
+#   ruby_llm_shared: &ruby_llm
+#     anthropic_api_key: <%%= ENV['ANTHROPIC_API_KEY'] %>
+#     openai_api_key: <%%= ENV['OPENAI_API_KEY'] %>
+#     provider: claude_code  # needs: gem "ruby_llm-providers-claude_code", require: "ruby_llm/providers/claude_code"
+#     model: sonnet-5.5
+#     request_timeout: 180
 #
 #   development:
 #     ruby_llm:
-#       log_level: :debug
+#       <<: *ruby_llm
+#       log_level: debug
 #
 #   test:
 #     streaming_enabled: false
 #     ruby_llm:
-#       model: claude-3-haiku-20240307
+#       model: claude-haiku-4-5
 #       request_timeout: 30
+#
+#   production:
+#     ruby_llm:
+#       <<: *ruby_llm
 #
 # Or use environment variables with double underscores for nested keys:
 #
 #   ROBOT_LAB_RUBY_LLM__ANTHROPIC_API_KEY=sk-ant-...
-#   ROBOT_LAB_RUBY_LLM__MODEL=claude_code/sonnet-5.5
+#   ROBOT_LAB_RUBY_LLM__PROVIDER=claude_code
+#   ROBOT_LAB_RUBY_LLM__MODEL=sonnet-5.5
+#
+# The model is picked up from this configuration when a robot is built. The
+# provider is not: robot_lab 0.6 only applies a provider passed to the robot
+# itself, so name it there too, e.g.
+#
+#   RobotLab.build(name: "support", provider: :claude_code, model: "sonnet-5.5")
 #
 
 # Set the RobotLab logger to use Rails.logger

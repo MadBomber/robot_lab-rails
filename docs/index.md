@@ -8,7 +8,7 @@ Rails integration for the [RobotLab](https://github.com/MadBomber/robot_lab) LLM
 ## What it provides
 
 - **Rails Engine** — autoloads `app/robots/` and `app/tools/` in your application
-- **Railtie** — wires `RobotLab.config` to `Rails.logger` and applies Rails-specific configuration
+- **Railtie** — points `RobotLab.config.logger` at `Rails.logger` and applies `config.robot_lab.default_model` / `config.robot_lab.default_provider` when your app sets them
 - **`RobotLab::Job`** — ActiveJob base class with Turbo Stream streaming, thread persistence, and error broadcasting
 - **Generators** — `rails generate robot_lab:install`, `robot_lab:robot NAME`, `robot_lab:job NAME`
 
@@ -64,7 +64,9 @@ When `thread_id:` is provided and `turbo-rails` is installed, streaming token ou
 ```erb
 <%= turbo_stream_from "robot_lab_thread_#{session[:id]}" %>
 <div id="robot_response"></div>
+<div id="robot_tools"></div>
 <div id="robot_status"></div>
+<div id="robot_errors"></div>
 ```
 
 ## Links

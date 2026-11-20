@@ -8,7 +8,7 @@ Rails integration for the [RobotLab](https://github.com/MadBomber/robot_lab) LLM
 ## What it provides
 
 - **Rails Engine** — autoloads `app/robots/` and `app/tools/` in your application
-- **Railtie** — wires `RobotLab.config` to `Rails.logger` and applies Rails-specific configuration
+- **Railtie** — points `RobotLab.config.logger` at `Rails.logger` and applies `config.robot_lab.default_model` / `config.robot_lab.default_provider` when your app sets them
 - **`RobotLab::Job`** — ActiveJob base class with Turbo Stream streaming, thread persistence, and error broadcasting
 - **Generators** — `rails generate robot_lab:install`, `robot_lab:robot NAME`, `robot_lab:job NAME`
 
@@ -31,8 +31,10 @@ rails db:migrate
 This creates:
 
 - `config/initializers/robot_lab.rb` — configuration
-- `app/robots/` — directory for your robots
-- Database tables for conversation history
+- `app/robots/` and `app/tools/` — directories for your robots and tools
+- `db/migrate/*_create_robot_lab_tables.rb` — database tables for conversation history
+- `app/models/robot_lab_thread.rb`, `app/models/robot_lab_result.rb` — models for those tables
+- `app/jobs/robot_run_job.rb` — generic background job
 
 ## Background Jobs
 
@@ -109,14 +111,16 @@ When `thread_id` is provided and [turbo-rails](https://github.com/hotwired/turbo
 
 - Wires `on_content` / `on_tool_call` Turbo Stream callbacks so the UI updates in real time
 - Broadcasts a **completion** event to `"robot_lab_thread_#{thread_id}"` when the run finishes
-- Broadcasts an **error** event (HTML-escaped) if the job raises
+- Appends an **error** message (HTML-escaped) to `#robot_errors` if the job raises
 
 In your view:
 
 ```erb
 <%= turbo_stream_from "robot_lab_thread_#{session[:id]}" %>
 <div id="robot_response"></div>
+<div id="robot_tools"></div>
 <div id="robot_status"></div>
+<div id="robot_errors"></div>
 ```
 
 ## Links
@@ -128,7 +132,7 @@ In your view:
 
 ## License
 
-MIT License - Copyright (c) 2025 Dewayne VanHoozer
+MIT License - Copyright (c) 2026 Dewayne VanHoozer
 
 ## Contributing
 
