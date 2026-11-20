@@ -50,7 +50,7 @@ defaults:
   ruby_llm:
     anthropic_api_key: <%= ENV['ANTHROPIC_API_KEY'] %>
     openai_api_key: <%= ENV['OPENAI_API_KEY'] %>
-    model: claude-sonnet-4
+    model: claude_code/sonnet-5.5
     request_timeout: 180
 
   # Template path auto-detected as app/prompts in Rails
@@ -79,7 +79,7 @@ Environment variables use the `ROBOT_LAB_` prefix with double underscores for ne
 
 ```bash
 ROBOT_LAB_RUBY_LLM__ANTHROPIC_API_KEY=sk-ant-...
-ROBOT_LAB_RUBY_LLM__MODEL=claude-sonnet-4
+ROBOT_LAB_RUBY_LLM__MODEL=claude_code/sonnet-5.5
 ROBOT_LAB_RUBY_LLM__REQUEST_TIMEOUT=180
 ```
 
@@ -107,7 +107,7 @@ RobotLab.config.logger = Rails.logger
 
 ```ruby
 # Read configuration values
-RobotLab.config.ruby_llm.model             #=> "claude-sonnet-4"
+RobotLab.config.ruby_llm.model             #=> "claude_code/sonnet-5.5"
 RobotLab.config.ruby_llm.anthropic_api_key #=> "sk-ant-..."
 RobotLab.config.ruby_llm.request_timeout   #=> 120
 RobotLab.config.streaming_enabled          #=> true
@@ -143,7 +143,7 @@ class SupportRobot
       name: "support",
       description: "Handles customer support inquiries",
       system_prompt: "You are a helpful support assistant.",
-      model: "claude-sonnet-4",
+      model: "claude_code/sonnet-5.5",
       local_tools: [OrderLookup],
       **options
     )
@@ -301,7 +301,7 @@ description: Customer support assistant
 parameters:
   company_name: null
   tone: friendly
-model: claude-sonnet-4
+model: claude_code/sonnet-5.5
 temperature: 0.7
 ---
 You are a support agent for <%= company_name %>.
@@ -616,7 +616,7 @@ class SupportRobotTest < ActiveSupport::TestCase
 
   test "robot has correct model" do
     robot = SupportRobot.build
-    assert_equal "claude-sonnet-4", robot.model
+    assert_equal "claude_code/sonnet-5.5", robot.model
   end
 
   test "robot has local tools" do

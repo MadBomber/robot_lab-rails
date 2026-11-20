@@ -50,7 +50,7 @@ RobotLab uses MywayConfig for configuration. There is no `RobotLab.configure` bl
 # config/robot_lab.yml
 defaults:
   ruby_llm:
-    model: claude-sonnet-4
+    model: claude_code/sonnet-5.5
     anthropic_api_key: <%= ENV['ANTHROPIC_API_KEY'] %>
 
 development:
@@ -71,7 +71,7 @@ ROBOT_LAB_RUBY_LLM__ANTHROPIC_API_KEY=sk-ant-...
 ROBOT_LAB_RUBY_LLM__OPENAI_API_KEY=sk-...
 
 # Model configuration
-ROBOT_LAB_RUBY_LLM__MODEL=claude-sonnet-4
+ROBOT_LAB_RUBY_LLM__MODEL=claude_code/sonnet-5.5
 ROBOT_LAB_RUBY_LLM__REQUEST_TIMEOUT=120
 ```
 
@@ -79,7 +79,7 @@ ROBOT_LAB_RUBY_LLM__REQUEST_TIMEOUT=120
 
 ```ruby
 # Read configuration values at runtime
-RobotLab.config.ruby_llm.model            #=> "claude-sonnet-4"
+RobotLab.config.ruby_llm.model            #=> "claude_code/sonnet-5.5"
 RobotLab.config.ruby_llm.request_timeout  #=> 120
 
 # The logger defaults to Rails.logger when running in Rails
