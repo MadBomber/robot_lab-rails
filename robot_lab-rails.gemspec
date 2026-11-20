@@ -13,7 +13,7 @@ Gem::Specification.new do |spec|
                      "persistence models, and generators for using robot_lab in Rails applications."
   spec.homepage = "https://github.com/MadBomber/robot_lab-rails"
   spec.license = "MIT"
-  spec.required_ruby_version = ">= 4.0"
+  spec.required_ruby_version = ">= 4.0.9"
 
   spec.metadata["allowed_push_host"]    = "https://rubygems.org"
   spec.metadata["homepage_uri"]         = spec.homepage
@@ -32,7 +32,7 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "robot_lab", "~> 0.3.0"
+  spec.add_dependency "robot_lab", "~> 0.6"
   spec.add_dependency "railties",      ">= 7.0"
   spec.add_dependency "activejob",     ">= 7.0"
   spec.add_dependency "activesupport", ">= 7.0"
