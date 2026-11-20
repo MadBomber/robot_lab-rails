@@ -2251,7 +2251,7 @@
 <li>Resolves the robot class (from the <code>robot_class</code> DSL or a <code>robot_class:</code> kwarg at enqueue time)</li>
 <li>Finds or creates a <code>RobotLabThread</code> record and stamps the incoming message</li>
 <li>Wires Turbo Stream callbacks when <code>turbo-rails</code> is available (graceful no-op otherwise)</li>
-<li>Runs the robot and persists the <code>RobotResult</code> to <code>RobotLabResult</code></li>
+<li>Runs the robot with the tools it was built with (<code>tools: :inherit</code>; pass <code>tools: :none</code> or a list at enqueue time to change that) and persists the <code>RobotResult</code> to <code>RobotLabResult</code></li>
 <li>Broadcasts a completion or error event via Turbo Streams</li>
 </ol>
 <p><code>retry_on StandardError</code> (3 attempts, 5 s wait) and <code>discard_on ActiveJob::DeserializationError</code> are configured by default.</p>
