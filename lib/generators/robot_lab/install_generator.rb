@@ -47,6 +47,8 @@ module RobotLab
         empty_directory "app/tools"
       end
 
+      # :reek:DuplicateMethodCall -- each `say ""` prints one blank spacer line; the repetition is the formatting.
+      # :reek:TooManyStatements -- a linear list of post-install instructions printed in order.
       def display_post_install
         say ""
         say "RobotLab installed successfully!", :green

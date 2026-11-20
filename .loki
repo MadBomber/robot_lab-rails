@@ -8,7 +8,7 @@ class Tasks
 
   header "robot_lab-rails v#{gem_version} — Rails integration for RobotLab"
 
-  desc "Run Rails-specific integration tests"
+  desc "Run the full test suite (this gem's tests ARE its Rails integration tests)"
   def integration
     sh "bundle exec rake test"
   end
