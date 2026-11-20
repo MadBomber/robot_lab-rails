@@ -8,8 +8,11 @@ class RobotLab::RailsIntegration::JobTest < Minitest::Test
     def export = { output: [], tool_calls: [] }
   end
 
-  FakeRobot = Struct.new(:result) do
-    def run(_message, **) = result
+  FakeRobot = Struct.new(:result, :run_opts) do
+    def run(_message, **opts)
+      self.run_opts = opts
+      result
+    end
   end
 
   class SpyRobotClass
@@ -52,6 +55,23 @@ class RobotLab::RailsIntegration::JobTest < Minitest::Test
 
   def test_robot_lab_job_is_the_job_base_class
     assert_same RobotLab::RailsIntegration::Job, RobotLab::Job
+  end
+
+  # ── run options ──────────────────────────────────────────────────────────────
+
+  def test_run_options_offer_the_robots_tools_by_default
+    assert_equal({ tools: :inherit }, TestJob.new.run_options({}))
+  end
+
+  def test_run_options_let_the_caller_override_tools
+    assert_equal({ tools: :none, user_id: 7 }, TestJob.new.run_options({ tools: :none, user_id: 7 }))
+  end
+
+  def test_perform_runs_the_robot_with_its_tools
+    robot = FakeRobot.new(FakeResult.new("spy", "end_turn", "abc"))
+    SpyRobotClass.stub(:build, robot) { TestJob.new.perform(message: "hi") }
+
+    assert_equal({ tools: :inherit }, robot.run_opts)
   end
 
   # ── robot_class DSL ──────────────────────────────────────────────────────────

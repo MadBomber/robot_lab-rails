@@ -11,7 +11,12 @@ Minimal Rails 8 app that demonstrates RobotLab's full Rails integration:
 ## Prerequisites
 
 - Ruby 4.0.9+ (required by `robot_lab-rails`)
-- An LLM API key (e.g. `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in your env)
+- An LLM to talk to — one of:
+  - `ANTHROPIC_API_KEY` in your env (the default model is RobotLab's configured default, a Claude model)
+  - a local [LM Studio](https://lmstudio.ai) server: `CHAT_PROVIDER=lms CHAT_MODEL=openai/gpt-oss-20b`
+  - the Claude Code CLI, logged in: `CHAT_PROVIDER=claude_code CHAT_MODEL=sonnet-5.5`
+  - any other hosted model RubyLLM knows, with that provider's API key: `CHAT_MODEL=gpt-4o-mini`
+- `robot_lab-rails` newer than 0.6.1 (0.6.1 does not define `RobotLab::Job`, which `RobotRunJob` inherits from)
 
 ## Setup
 
@@ -24,8 +29,12 @@ bin/setup
 
 ```bash
 bin/dev
+# or, on a local LM Studio model:
+CHAT_PROVIDER=lms CHAT_MODEL=openai/gpt-oss-20b bin/dev
 # Open http://localhost:3000
 ```
+
+`CHAT_PROVIDER` / `CHAT_MODEL` are read by `ChatRobot` (`app/robots/chat_robot.rb`).
 
 ## Try It
 
