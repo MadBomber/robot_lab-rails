@@ -778,7 +778,7 @@ This gem is under active development. APIs may change without notice.</p>
 <h2 id="what-it-provides">What it provides<a class="headerlink" href="#what-it-provides" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Rails Engine</strong> — autoloads <code>app/robots/</code> and <code>app/tools/</code> in your application</li>
-<li><strong>Railtie</strong> — wires <code>RobotLab.config</code> to <code>Rails.logger</code> and applies Rails-specific configuration</li>
+<li><strong>Railtie</strong> — points <code>RobotLab.config.logger</code> at <code>Rails.logger</code> and applies <code>config.robot_lab.default_model</code> / <code>config.robot_lab.default_provider</code> when your app sets them</li>
 <li><strong><code>RobotLab::Job</code></strong> — ActiveJob base class with Turbo Stream streaming, thread persistence, and error broadcasting</li>
 <li><strong>Generators</strong> — <code>rails generate robot_lab:install</code>, <code>robot_lab:robot NAME</code>, <code>robot_lab:job NAME</code></li>
 </ul>
@@ -821,7 +821,9 @@ This gem is under active development. APIs may change without notice.</p>
 <p>When <code>thread_id:</code> is provided and <code>turbo-rails</code> is installed, streaming token output is broadcast automatically:</p>
 <div class="language-erb highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="cp">&lt;%=</span><span class="w"> </span><span class="n">turbo_stream_from</span><span class="w"> </span><span class="s2">"robot_lab_thread_</span><span class="si">#{</span><span class="n">session</span><span class="o">[</span><span class="ss">:id</span><span class="o">]</span><span class="si">}</span><span class="s2">"</span><span class="w"> </span><span class="cp">%&gt;</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="x">&lt;div id="robot_response"&gt;&lt;/div&gt;</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="x">&lt;div id="robot_status"&gt;&lt;/div&gt;</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="x">&lt;div id="robot_tools"&gt;&lt;/div&gt;</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="x">&lt;div id="robot_status"&gt;&lt;/div&gt;</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="x">&lt;div id="robot_errors"&gt;&lt;/div&gt;</span>
 </span></code></pre></div>
 <h2 id="links">Links<a class="headerlink" href="#links" title="Permanent link">&para;</a></h2>
 <ul>
