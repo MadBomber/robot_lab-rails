@@ -419,7 +419,7 @@ All RobotLab background jobs inherit from `RobotLab::Job` (`RobotLab::RailsInteg
 1. Resolves the robot class (from the `robot_class` DSL or a `robot_class:` kwarg at enqueue time)
 2. Finds or creates a `RobotLabThread` record and stamps the incoming message
 3. Wires Turbo Stream callbacks when `turbo-rails` is available (graceful no-op otherwise)
-4. Runs the robot and persists the `RobotResult` to `RobotLabResult`
+4. Runs the robot with the tools it was built with (`tools: :inherit`; pass `tools: :none` or a list at enqueue time to change that) and persists the `RobotResult` to `RobotLabResult`
 5. Broadcasts a completion or error event via Turbo Streams
 
 `retry_on StandardError` (3 attempts, 5 s wait) and `discard_on ActiveJob::DeserializationError` are configured by default.

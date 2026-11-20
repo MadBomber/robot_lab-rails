@@ -7,6 +7,7 @@
 - **`config.robot_lab.default_model` / `default_provider` no longer crash boot.** They are written to `RobotLab.config.ruby_llm.model` / `.provider` by the new `RailsIntegration::Configurator`.
 - **`app/robots` and `app/tools` autoload paths resolve against the application root**, not the gem's directory.
 - **The gem loads in an app that has not yet loaded ActiveJob**; it now requires `active_job` before defining the job class.
+- **`RobotLab::Job` offers the robot its tools.** The job called `robot.run` without `tools:`, and `Robot#run` sends none by default, so a robot built with `local_tools:` never called them from a job. The job now passes `tools: :inherit` unless `tools:` is given at enqueue time.
 - **`rails g robot_lab:robot NAME --tools=a,b`** accepts comma- or space-separated tool names.
 
 ## [0.6.1] - 2026-11-19

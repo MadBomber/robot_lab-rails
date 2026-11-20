@@ -23,7 +23,7 @@ module RobotLab
         klass  = resolve_robot_class(robot_class)
         thread = setup_thread(thread_id, message)
         robot  = build_robot(klass, thread_id)
-        result = robot.run(message, **context)
+        result = robot.run(message, **run_options(context))
 
         if thread
           persist_result(thread, result)
@@ -34,6 +34,16 @@ module RobotLab
       rescue StandardError => e
         broadcast_error(thread_id, e) if thread_id
         raise
+      end
+
+      # Options passed to robot.run. Robot#run sends no tools unless told to, so
+      # the tools the robot was built with are offered by default; a `tools:` (or
+      # any other key) given at enqueue time wins.
+      #
+      # @param context [Hash] extra keyword arguments given to perform
+      # @return [Hash]
+      def run_options(context)
+        { tools: :inherit }.merge(context)
       end
 
       private

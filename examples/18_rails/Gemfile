@@ -9,3 +9,9 @@ gem "turbo-rails", "~> 2.0"
 
 gem "robot_lab"
 gem "robot_lab-rails"
+
+# Optional providers, selected with CHAT_PROVIDER (see README):
+#   lms         — local models served by LM Studio, no API key
+#   claude_code — the Claude Code CLI (`claude`), which must be logged in
+gem "ruby_llm-providers-lms",         require: "ruby_llm/providers/lms"
+gem "ruby_llm-providers-claude_code", require: "ruby_llm/providers/claude_code"
